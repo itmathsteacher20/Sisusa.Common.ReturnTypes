@@ -1,183 +1,158 @@
-# **README Sisusa.Common.ReturnTypes**
+# Sisusa.Common.ReturnTypes - README
 
-## **Overview**
+This library is a personal implementation of the Result pattern in C#, collecting a few favorite ideas from various sources. For more details about the Result pattern, see this excellent [article](https://www.milanjovanovic.tech/blog/functional-error-handling-in-dotnet-with-the-result-pattern).
 
-The Sisusa Common library provides a set of utility classes for handling errors and failures in a more functional and robust manner. These classes offer a cleaner and safer approach to error handling compared to traditional exception-based methods.
+The Sisusa.Common.ReturnTypes namespace provides utility extension methods to enhance the usability of types like Optional<T> and FailureOr<T>. These methods allow seamless handling of nullable values, default values, and error-prone operations like retrieving single elements from collections. They promote cleaner and more readable code while ensuring robust error handling.
+## What is the Result Pattern?
 
-## **Key Components**
+The Result pattern provides a structured approach to handling errors and results explicitly, avoiding exceptions for normal flow control. It enables representing either success or failure in a method or operation using a `Result` type containing either a success value or error details.
 
-1. **`FailureInfo`**
-    * Encapsulates information about a failure, including a message, an underlying exception, and an error code.
-    * Provides static methods to create `FailureInfo` instances from exceptions or messages.
-    * Allows chaining methods to add more details to the failure information.
+### Why Use the Result Pattern?
 
-2. **`FailureOr<T>`**
-    * Represents a value that might be either a successful result of type `T` or a failure.
-    * Offers functional methods for handling success and failure cases:
-        * `GetOr`: Returns the value if successful, otherwise a default value.
-        * `Handle`: Executes actions based on success or failure.
-        * `Match`: Selects and executes a function based on success or failure.
-    * Provides static methods to create `FailureOr<T>` instances from values or failures.
-    * Supports chaining operations using `Then` and `Map` methods.
+1. **Explicit Error Handling**: The pattern promotes handling errors explicitly, making the code more predictable, testable, and debuggable.
+2. **Improved Readability**: By returning a `Result` type, methods clearly convey whether they succeeded or failed and why.
+3. **Streamlined Chaining**: It simplifies composing and chaining operations while preserving error context.
 
-3. **`FailureOrNothing`**
-    * Represents a result that can either be successful or a failure without an associated value.
-    * Provides methods for handling success and failure cases, similar to `FailureOr<T>`.
-    * Offers a `ThrowAsException` method to re-throw the underlying exception if present.
+## Features of `Sisusa.Common.ReturnTypes`
 
-## **Usage Examples**
+Rather than adhering to the typical `Result` or `Either<L, R>` types found in most similar libraries, `Sisusa.Common.ReturnTypes` introduces two primary result types tailored for distinct use cases:
 
-**Example 1: Using `FailureOr<T>`**
+### 1. `FailureOrNothing`
+This type is used for operations that do not return a value. It encapsulates success or failure explicitly, replacing the need to throw exceptions for errors. For example:
 
 ```csharp
-var result = FailureOr<int>.From(() => {
-    // Some operation that might fail
-    if (someCondition) {
-        throw new Exception("Operation failed");
-    }
-    return 42;
-});
+FailureOrNothing SaveData(DataModel data)
+{
+    if (data == null)
+        return FailureOrNothing.Fail(new Failure("NULL_DATA", "Data cannot be null"));
 
-result.Match(
-    success: value => Console.WriteLine($"Success: {value}"),
-    failure: error => Console.WriteLine($"Error: {error.Message}")
-);
+    // Save data logic here...
+    return FailureOrNothing.Succeed();
+}
 ```
 
-**Traditional Approach vs. `FailureOr<T>`**
-
-* **Traditional:**
-  ```csharp
-  try {
-      int result = SomeOperation();
-      Console.WriteLine($"Success: {result}");
-  } catch (Exception ex) {
-      Console.WriteLine($"Error: {ex.Message}");
-  }
-  ```
-
-* **`FailureOr<T>`:**
-  The `FailureOr<T>` approach provides a more concise and functional way to handle errors, avoiding the need for explicit `try-catch` blocks. It also allows for easier chaining of operations and more elegant error handling.
-
-**Example 2: Using `FailureOrNothing`**
+### 2. `FailureOr<T>`
+This type is designed for operations that return a value. It encapsulates either the result value or failure details:
 
 ```csharp
-var result = FailureOrNothing.From(() => {
-    // Some operation that might throw an exception
-    DoSomething();
-});
+FailureOr<User> GetUserById(int userId)
+{
+    if (userId <= 0)
+        return FailureOr<User>.Fail(new Failure("INVALID_ID", "User ID must be greater than zero"));
 
-result.Match(
-    success: () => Console.WriteLine("Success"),
-    failure: error => Console.WriteLine($"Error: {error.Message}")
-);
+    var user = database.GetUser(userId);
+    if (user == null)
+        return FailureOr<User>.Fail(new Failure("NOT_FOUND", $"User with ID {userId} not found"));
+
+    return FailureOr<User>.Succeed(user);
+}
 ```
 
-**Traditional Approach vs. `FailureOrNothing`**
+## Why Two Result Types?
+By distinguishing between operations that return a value (`FailureOr<T>`) and those that do not (`FailureOrNothing`), the library ensures clarity and prevents misuse. This design aligns with the principle of explicit programming, reducing ambiguity in method signatures and promoting better error handling practices.
 
-* **Traditional:**
-  ```csharp
-  try {
-      DoSomething();
-      Console.WriteLine("Success");
-  } catch (Exception ex) {
-      Console.WriteLine($"Error: {ex.Message}");
-  }
-  ```
 
-* **`FailureOrNothing`:**
-  Similar to `FailureOr<T>`, `FailureOrNothing` offers a cleaner and more functional approach to handling operations that might fail. It avoids the need for explicit `try-catch` blocks and provides a more concise syntax.
+For more detailed documentation please read [FailureOr<T>](docs/FailureOr.md), [FailureOrNothing](docs/FailureOrNothing.md) and [Extension methods](docs/FailureOrExtensions.md)
 
-## Extended Documentation for Sisusa Common Library
+---
+# Other Types in the Library
+## **1** `Optional<T>`
 
-### `FailureOr<T>` in Depth
+The `Optional<T>` class represents a value that may or may not be present, providing a safer alternative to null values. It enables functional-style handling of optional values with methods for mapping, transforming, and handling presence/absence of values.
 
-**Key Features and Usage:**
+#### Key Features:
+1. **Creation**:
+    - `Optional<T>.Some(value)`: Wraps a non-null value.
+    - `Optional<T>.Empty()`: Creates an empty optional.
 
-* **`GetOr`**:
-    - Retrieves the value if successful, otherwise returns a default value.
-  ```csharp
-  int result = failureOr.GetOr(0);
-  ```
+2. **Value Retrieval**:
+    - `OrElse(T other)`: Returns the value or an alternative if absent.
+    - `OrElseGet(Func<T> supplier)`: Computes and returns a value if absent.
+    - `OrThrow(Exception ex)`: Throws an exception if no value is present.
 
-* **`Handle`**:
-    - Executes actions based on success or failure.
-  ```csharp
-  failureOr.Handle(
-      success: value => Console.WriteLine($"Success: {value}"),
-      failure: error => Console.WriteLine($"Error: {error.Message}")
-  );
-  ```
+3. **Transformations**:
+    - `Map(Func<T, TU>)`: Applies a function to the value if present, returning a new `Optional<TU>`.
+    - `FlatMap(Func<T, Optional<TU>> mapFunc)`: Chains transformations by returning another `Optional`.
 
-* **`Match`**:
-    - Selects and executes a function based on success or failure.
-  ```csharp
-  string result = failureOr.Match(
-      success: value => $"Success: {value}",
-      failure: error => $"Error: {error.Message}"
-  );
-  ```
+4. **Conditionally Perform Actions**:
+    - `IfHasValue(Action<T>)`: Executes an action if the value exists.
+    - `Match(Action<T> some, Action none)`: Executes different actions based on the presence of a value.
 
-* **`Then`**:
-    - Chains operations, transforming the value if successful.
-  ```csharp
-  var result = failureOr.Then(value => 
-      FailureOr<string>.Success($"Processed: {value}")
-  );
-  ```
+5. **Advanced Features**:
+    - Supports asynchronous mapping (`MapAsync`) and matching (`MatchAsync`).
+    - Supports equality comparison and custom `ToString()` formatting.
 
-* **`Map`**:
-    - Transforms the value if successful.
-  ```csharp
-  var result = failureOr.Map(value => value * 2);
-  ```
+#### Usage Example:
+```csharp
+var optionalValue = Optional<int>.Some(42);
 
-### `FailureOrNothing` in Depth
+optionalValue
+    .Map(value => value * 2)
+    .Match(
+        some: v => Console.WriteLine($"Value: {v}"),
+        none: () => Console.WriteLine("No value"));
+```
 
-**Key Features and Usage:**
+For more detailed information, refer to the [extended documentation](docs/Optional.md).
 
-* **`Then`**:
-    - Executes an action if successful.
-  ```csharp
-  failureOr.Then(() => Console.WriteLine("Success"));
-  ```
+---
 
-* **`Match`**:
-    - Selects and executes a function based on success or failure.
-  ```csharp
-  string result = failureOr.Match(
-      success: () => "Success",
-      failure: error => $"Error: {error.Message}"
-  );
-  ```
+## **2** `IFailure`,`Failure`, `FailureInfo`, `FailureFactory`
 
-* **`Catch`**:
-    - Executes an action if the result is a failure.
-  ```csharp
-  failureOr.Catch(error => Console.WriteLine($"Error: {error.Message}"));
-  ```
+- ### **`IFailure`**  
+  Defines the contract for failure information, encapsulating a failure message and an optional underlying exception.
+   - **`Message`**: A descriptive message for the failure.
+   - **`InnerException`**: An optional `Exception` providing additional details about the failure.
 
-### Additional Considerations
 
-* **Error Handling and Recovery:**
-    - Use `FailureOr` to handle errors gracefully and provide meaningful feedback to the user.
-    - Consider using `FailureOrNothing` for operations that don't return a specific value.
-    - Employ `Then` and `Map` for sequential operations and transformations.
-    - Utilize `Match` to handle both success and failure cases concisely.
+- ### **`FailureInfo`**  
+  Represents detailed information about a failure, including a message, an optional underlying exception, and support for equality checks and factory methods.
+   - **Constructor**: Accepts a `message` and optional `innerException`.
+   - **Properties**:
+      - `Message`: Descriptive message for the failure.
+      - `InnerException`: Optional `Exception` wrapped in an `Optional<>`.
+   - **Methods**:
+      - `FromException`: Creates an instance using an exception and a message.
+      - `WithMessage`: Creates an instance with a specific message.
+      - `WithException`: Adds an exception to the instance.
+   - **Implicit Operators**: Converts between `FailureInfo` and `Failure`.
 
-* **Best Practices:**
-    - Prioritize functional approaches for cleaner and more concise error handling.
-    - Avoid excessive nesting and use chaining techniques to improve readability.
-    - Consider custom exception types for specific error scenarios.
-    - Test your error handling thoroughly to ensure robustness.
+- ### **`Failure`**  
+  Represents a failure with a short code, description, and optional exception.
+   - **Constructor**: Accepts `shortCode`, `extendedDescription`, and optional `innerException`.
+   - **Properties**:
+      - `Code`: Short identifier for the failure.
+      - `Description`: Extended failure description.
+      - `Message`: Combines the code and description into a single message.
+      - `InnerException`: Optional `Exception` wrapped in an `Optional<>`.
+   - **Methods**:
+      - Equality and hash methods for comparison.
+   - **Implicit Operators**: Converts between `Failure` and `FailureInfo`.
 
-By effectively utilizing these features and following best practices, you can significantly enhance the reliability and maintainability of your applications.
+- ### **`FailureFactory`**  
+  Provides factory methods to create instances of `IFailure`.
+   - **Methods**:
+      - `WithMessage`: Creates a `FailureInfo` with a specific message.
+      - `WithCodeAndMessage`: Creates a `Failure` with a short code and message.
+      - `WithCodeMessageAndException`: Creates a `Failure` with a code, description, and exception.
+      - `WithMessageAndException`: Creates a `FailureInfo` with a message and exception.
+      - `FromMessage`: Creates a `FailureInfo` using a message.
+      - `FromException`: Creates a `FailureInfo` from an exception.
+      - `FromCodeAndDescription`: Creates a `Failure` using a code and description.
 
-**Best Practices**
+### **Key Features**:
+- Encapsulation of failure details through well-structured classes.
+- Strong typing with constructors, properties, and optional `Exception` handling.
+- Factory methods for flexible creation of failure information.
+- Support for equality and implicit type conversions between `FailureInfo` and `Failure`.
 
-* Use `FailureOr<T>` and `FailureOrNothing` to handle potential failures in your code.
-* Prefer functional approaches to error handling.
-* Use chaining methods to combine operations and error handling.
-* Consider using custom exception types to provide more specific error information.
+For extended user documentation, please see [extended docs](docs/Failure-Types.md)
 
-By following these guidelines and leveraging the features of the Sisusa Common library, you can write more robust and maintainable code.
+## **Global Extensions**
+Extension methods are provided to make it easier to seamlessly convert normal/standard values to instances of `Optional<T>` and also, to add `Optional<T>` or `FailureOr<T>` capabilities to standard collections.
+All these are designed to ensure clear, maintainable and more robust code that is able to handle errors gracefully.
+
+Read more about these extension methods [here](docs/Extensions.md)
+
+
+This library offers a clean and flexible approach to handling results and failures in C#. Feedback and contributions are welcome!

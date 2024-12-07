@@ -4,42 +4,37 @@
     /// Represents a result type that can either signify success or a failure,
     /// encapsulating potential failure information.
     /// </summary>
-    public class FailureOrNothing
+    public class FailureOrNothing 
     {
         private bool IsError { get; set; }
 
-        private FailureInfo Error { get; set; }
+        private IFailure Error { get; set; }
 
         private FailureOrNothing()
         {
             IsError = false;
-            Error = FailureInfo.WithMessage("An error occurred.");
+            Error = FailureFactory.FromMessage("An error occurred and the request failed."); 
         }
 
-        private FailureOrNothing(FailureInfo failureInfo)
+        private FailureOrNothing(IFailure failureInfo)
         {
             IsError = true;
             Error = failureInfo;
         }
 
         /// <summary>
-        /// Creates a new <see cref="FailureOrNothing"/> instance that signifies success.
+        /// Creates a new <see cref="FailureOrNothing"/> instance that indicates that the operation was successful.
         /// </summary>
-        /// <returns>A new <see cref="FailureOrNothing"/> instance that signifies success.</returns>
-        public static FailureOrNothing Success() => new();
-
+        /// <returns>A new <see cref="FailureOrNothing"/> instance that signifies a success.</returns>
+        public static FailureOrNothing Success => Succeed();
+        
         /// <summary>
-        /// Creates a new <see cref="FailureOrNothing"/> instance that signifies a failure with the provided failure information.
+        /// Creates a new <see cref="FailureOrNothing"/> instance that signifies a failure, using a generic message
+        /// as a description of the failure.
         /// </summary>
-        /// <param name="failureInfo">The failure information describing the error.</param>
-        /// <returns>A new <see cref="FailureOrNothing"/> instance that signifies a failure.</returns>
-        public static FailureOrNothing Failure(FailureInfo failureInfo) => new(failureInfo);
-
-        /// <summary>
-        /// Creates a new <see cref="FailureOrNothing"/> instance that signifies a failure with the provided error message.
-        /// </summary>
-        /// <param name="message">The error message that describes the failure.</param>
-        public static FailureOrNothing Failure(string message) => new(FailureInfo.WithMessage(message));
+        /// <returns>A new <see cref="FailureOrNothing"/> instance that signifies failure.</returns>
+        public static FailureOrNothing Failure => Fail("The request failed - no further information available.");
+        
 
         /// <summary>
         /// Executes the provided action if the current instance does not signify an error,
@@ -57,11 +52,11 @@
             try
             {
                 doAction();
-                return Success();
+                return Succeed();
             }
             catch (Exception ex)
             {
-                return Failure(FailureInfo.FromException(ex, "Action threw an exception"));
+                return Fail(FailureFactory.WithMessageAndException("Then operation failed.", ex));
             }
         }
 
@@ -77,7 +72,9 @@
                 return Task.FromResult(this);
             }
             return doAction().ContinueWith(task => task.IsFaulted ?
-                Failure(FailureInfo.FromException(task.Exception!, "Action threw an exception")) : Success());
+                Fail(
+                    FailureFactory.WithMessageAndException("Then threw an exception.",task.Exception!)) : 
+                Succeed());
         }
 
         /// <summary>
@@ -87,7 +84,7 @@
         /// <param name="success">The function to execute if the result signifies success.</param>
         /// <param name="failure">The function to execute if the result signifies failure, with the failure information provided.</param>
         /// <returns>The result of the executed function, either the success function or the failure function.</returns>
-        public TResult Match<TResult>(Func<TResult> success, Func<FailureInfo, TResult> failure)
+        public TResult MatchReturn<TResult>(Func<TResult> success, Func<IFailure, TResult> failure)
         {
             return IsError ? failure(Error) : success();
         }
@@ -100,9 +97,22 @@
         /// <param name="success">A function to execute if the operation signifies success, returning a <typeparamref name="TResult"/>.</param>
         /// <param name="failure">A function to execute if the operation signifies failure, returning a <typeparamref name="TResult"/> with failure information.</param>
         /// <returns>A task that represents the asynchronous operation, containing the result of type <typeparamref name="TResult"/>.</returns>
-        public Task<TResult> MatchAsync<TResult>(Func<Task<TResult>> success, Func<FailureInfo, Task<TResult>> failure)
+        public Task<TResult> MatchReturnAsync<TResult>(Func<Task<TResult>> success, Func<IFailure, Task<TResult>> failure)
         {
             return IsError ? failure(Error) : success();
+        }
+
+        /// <summary>
+        /// Executes one of the provided actions based on the result encapsulated by the current instance.
+        /// </summary>
+        /// <param name="success">An action to execute if the result signifies success.</param>
+        /// <param name="failure">An action to execute if the result signifies failure, taking <see cref="FailureInfo"/> as an argument.</param>
+        public void Match(Action success, Action<IFailure> failure)
+        {
+            if (IsError)
+                failure(Error);
+            else
+                success();
         }
 
 
@@ -110,36 +120,15 @@
         /// Executes a specified action if the current instance represents a failure,
         /// passing the failure information to the provided action.
         /// </summary>
-        /// <param name="catchAction">The action to execute with the <see cref="FailureInfo"/> of the failure.</param>
-        public void Catch(Action<FailureInfo> catchAction)
+        /// <param name="catchAction">The action to execute with the <see cref="IFailure"/> of the failure.</param>
+        public void Catch(Action<IFailure> catchAction)
         {
             if (IsError)
             {
                 catchAction(Error);
             }
         }
-
-
-        /// <summary>
-        /// Wraps the given exception into a generic wrapper exception type for consistent error handling.
-        /// </summary>
-        /// <param name="theException">The exception to be wrapped.</param>
-        /// <returns>A new wrapper exception that contains the original exception.</returns>
-        public static FailureOrNothing WrapException(Exception theException)
-        {
-            return WrapException(theException, theException.Message);
-        }
-
-        /// <summary>
-        /// Wraps an exception in a <see cref="FailureOrNothing"/> instance, providing a failure result with the specified message.
-        /// </summary>
-        /// <param name="ex">The exception to be wrapped.</param>
-        /// <param name="message">A message describing the context of the exception.</param>
-        /// <returns>A <see cref="FailureOrNothing"/> instance encapsulating the exception and message as failure information.</returns>
-        public static FailureOrNothing WrapException(Exception ex, string message)
-        {
-            return Failure(FailureInfo.FromException(ex, message));
-        }
+        
 
         /// <summary>
         /// Throws the underlying exception if the current instance represents an error.
@@ -149,14 +138,50 @@
         public void ThrowAsException()
         {
             if (!IsError) return;
-
-            if (Error.InnerException is null)
-            {
-                throw new Exception(Error.Message);
-            }
-            throw Error.InnerException;
+            
+            Error.InnerException.Match(
+                some: ex => throw ex!, 
+                none: () => throw new Exception(Error.Message));
         }
+        
+        /// <summary>
+        /// Creates a new <see cref="FailureOrNothing"/> instance that signifies a successful execution.
+        /// </summary>
+        /// <returns>A new <see cref="FailureOrNothing"/> instance that signifies a success.</returns>
+        public static FailureOrNothing Succeed() => new();
+        
+        /// <summary>
+        /// Creates a new <see cref="FailureOrNothing"/> instance that signifies a failure with the provided message.
+        /// </summary>
+        /// <param name="message">The message describing the failure details-why the operation failed.</param>
+        /// <returns>A new <see cref="FailureOrNothing"/> instance that signifies a failure.</returns>
+        public static FailureOrNothing Fail(string message) => new(FailureFactory.FromMessage(message));
 
+        /// <summary>
+        /// Creates a new <see cref="FailureOrNothing"/> instance that signifies a failure with the provided <see cref="IFailure"/> information.
+        /// </summary>
+        /// <param name="failure">The <see cref="IFailure"/> instance containing failure details.</param>
+        /// <returns>A new <see cref="FailureOrNothing"/> instance that signifies a failure.</returns>
+        public static FailureOrNothing Fail(IFailure failure) => new(failure);
+
+        /// <summary>
+        /// Creates a new <see cref="FailureOrNothing"/> instance that signifies a failure with the provided exception information.
+        /// </summary>
+        /// <param name="exception">The exception containing the error information.</param>
+        /// <returns>A new <see cref="FailureOrNothing"/> instance that signifies a failure.</returns>
+        public static FailureOrNothing Fail(Exception exception) => new(FailureFactory.FromException(exception));
+
+        /// <summary>
+        /// Creates a new <see cref="FailureOrNothing"/> instance that signifies a failure
+        /// with the provided exception and message information.
+        /// </summary>
+        /// <param name="exception">The exception that caused the failure.</param>
+        /// <param name="message">A message describing the context of the failure.</param>
+        /// <returns>A new <see cref="FailureOrNothing"/> instance that signifies a failure.</returns>
+        public static FailureOrNothing Fail(Exception exception, string message)
+        {
+            return new(FailureFactory.WithMessageAndException(message, exception));
+        }
     }
 
 }

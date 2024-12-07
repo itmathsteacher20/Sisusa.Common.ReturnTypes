@@ -3,6 +3,7 @@
     /// <summary>
     /// Represents an error that occurs during validation of a property within a system.
     /// </summary>
+    //[Deprecated]
     public class ValidationError(string propertyName, string reasonForFail)
     {
         /// <summary>

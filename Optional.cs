@@ -88,6 +88,21 @@
         }
 
         /// <summary>
+        /// Asynchronously applies the provided function to the value, if present, and returns a new <c>Task</c> of the mapped result.
+        /// </summary>
+        /// <param name="mapFunc">A function to apply to the value, if present.</param>
+        /// <returns>A <c>Task</c> representing the asynchronous operation, containing the mapped result if the value is present; otherwise, a completed <c>Task</c> with the default result.</returns>
+        public Task<Optional<T>> MapAsync(Func<T, Task<T>> mapFunc)
+        {
+            if (!HasValue())
+            {
+                return Task.FromResult(this);
+            }
+            return mapFunc(_value!).ContinueWith(task => task.IsFaulted ?
+                None : Some(task.Result));
+        }
+
+        /// <summary>
         /// Transforms the current <c>Optional</c> instance to another form using the specified mapping function.
         /// If the current instance is empty, returns an empty <c>Optional</c>.
         /// </summary>
@@ -123,12 +138,10 @@
         /// </returns>
         public Optional<TU> FlatMap<TU>(Func<T, Optional<TU>> mapFunc)
         {
-            if (HasValue())
-            {
-                var returnValue = mapFunc(_value!);
-                return returnValue;
-            }
-            return Optional<TU>.Empty();
+            if (!HasValue()) return Optional<TU>.Empty();
+            
+            var returnValue = mapFunc(_value!);
+            return returnValue;
         }
 
         /// <summary>
@@ -161,6 +174,8 @@
                 some(_value!);
             }
         }
+        
+        
 
         /// <summary>
         /// Asynchronously executes the specified asynchronous function if the current <c>Optional</c> instance contains
@@ -169,18 +184,39 @@
         /// <param name="some">The asynchronous function to execute if a value is present. The function takes the value as a parameter.</param>
         /// <param name="none">The asynchronous action to execute if the current <c>Optional</c> instance is empty.</param>
         /// <returns>A <c>Task</c> representing the asynchronous operation.</returns>
-        public async Task MatchAsync(Func<T, Task<Action<T>>> some, Func<Task<Action>> none)
+        public async Task MatchAsync(Func<T, Task> some, Func<Task> none)
         {
             var isEmpty = !HasValue();
             //Console.WriteLine($"Empty state: {isEmpty}");
             if (isEmpty)
             {
-                await none();
+                 await none();
             }
             else
             {
                 await some(_value!);
             }
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is not Optional<T> opt) return false;
+            
+            if (!HasValue())
+            {
+                return opt.HasValue() == false;
+            }
+            return opt._value!.Equals(opt._value);
+        }
+
+        public override int GetHashCode()
+        {
+            return HasValue() ? _value!.GetHashCode() : 0;
+        }
+
+        public override string ToString()
+        {
+            return !HasValue() ? "None" : $"Some({_value}";
         }
 
 
@@ -226,7 +262,13 @@
 
         protected Optional(T? valueToWrap)
         {
-            if (valueToWrap != null)
+            if (valueToWrap == null && !Equals(valueToWrap, default(T)))
+            {
+                _value = default(T);
+                _empty = true;
+                
+            }
+            else
             {
                 _value = valueToWrap;
                 _empty = false;
@@ -241,5 +283,33 @@
         
     }
 
-    //public sealed class Some<T>(T value) : Optional<T>(value) where T : class;
+    /// <summary>
+    /// Provides helper methods for creating instances of <see cref="Optional{T}"/> 
+    /// that represent an optional value, which may or may not be present.
+    /// </summary>
+    public static class Option
+    {
+        /// <summary>
+        /// Creates an instance of <see cref="Optional{T}"/> that contains the provided value.
+        /// This represents a successful state with a value.
+        /// </summary>
+        /// <param name="value">The value to wrap in an <see cref="Optional{T}"/> instance.</param>
+        /// <typeparam name="T">The type of the value contained in the <see cref="Optional{T}"/>.</typeparam>
+        /// <returns>An <see cref="Optional{T}"/> containing the provided value.</returns>
+        public static Optional<T> Some<T>(T value)
+        {
+            return Optional<T>.Some(value);
+        }
+
+        /// <summary>
+        /// Creates an instance of <see cref="Optional{T}"/> that represents the absence of a value.
+        /// This is a failure state, indicating no value is present.
+        /// </summary>
+        /// <typeparam name="T">The type of the value that would be contained in the <see cref="Optional{T}"/> if present.</typeparam>
+        /// <returns>An <see cref="Optional{T}"/> representing an empty state with no value.</returns>
+        public static Optional<T> Empty<T>()
+        {
+            return Optional<T>.None;
+        }
+    }
 }
