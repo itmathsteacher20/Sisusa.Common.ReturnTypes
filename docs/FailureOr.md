@@ -162,20 +162,29 @@ This example safely handles division by zero by encapsulating the error in a `Fa
 - Essentially made working with the class more convenient and less verbose.
 
 ```csharp C#
- var foundUser = await userService.FindById(123);
- 
-    
- //previous version code with verbose conversion
- if (foundUser is null)
-     return FailureOr<User>.Fail(new EntityNotFoundError("User", 123)); 
+FailureOr<User> FindUserById(int id)
+{
+    try{
+      var foundUser = await userService.FindById(id); //foundUser:User?
+     
+      //previous version code with verbose conversion
+      if (foundUser is null)
+          return FailureOr<User>.Fail(new EntityNotFoundError("User", id));
 
- return FailureOr<User>.Succeed(foundUser);
-
+      return FailureOr<User>.Succeed(foundUser);
+    } catch (Exception e)
+    {
+         return FailureOr<User>.Fail(e, "Failed to find user");
+    }
+}
  //can now be written, with automatic(implicit) conversion as
- return (foundUser is null) ? 
-    new EntityNotFoundError("User", 123) : 
-    foundUser;
-
+FailureOr<User> FindUserById(int id)
+{
+     User? foundUser = await userService.FindById(id);
+     return (foundUser is null) ? 
+            new EntityNotFoundError("User", id) : 
+            foundUser;
+}
 ```
 ### Properties
 
