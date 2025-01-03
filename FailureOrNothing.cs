@@ -26,7 +26,13 @@
         /// Creates a new <see cref="FailureOrNothing"/> instance that indicates that the operation was successful.
         /// </summary>
         /// <returns>A new <see cref="FailureOrNothing"/> instance that signifies a success.</returns>
+        [Obsolete("Use Nothing instead - to be more expressive and in line with the typename.")]
         public static FailureOrNothing Success => Succeed();
+
+        /// <summary>
+        /// Creates a new <see cref="FailureOrNothing"/> instance that indicates that the operation was successful.
+        /// </summary>
+        public static FailureOrNothing Nothing => Succeed();
         
         /// <summary>
         /// Creates a new <see cref="FailureOrNothing"/> instance that signifies a failure, using a generic message
@@ -182,6 +188,24 @@
         {
             return new(FailureFactory.WithMessageAndException(message, exception));
         }
+
+        public static implicit operator FailureOrNothing(Exception exception)
+        {
+            return FailureOrNothing.Fail(FailureFactory.FromException(exception));
+        }
+
+        public static implicit operator FailureOrNothing(Failure fail)
+        {
+            return Fail(fail);
+        }
+
+        public static implicit operator FailureOrNothing(FailureInfo fail)
+        {
+            return FailureOrNothing.Fail(fail);
+        }
+
+        
+
     }
 
 }

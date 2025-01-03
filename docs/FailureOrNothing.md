@@ -19,8 +19,17 @@ The `FailureOrNothing` class provides a versatile way to handle the results of o
 
 ### **1. Simple Success and Failure Handling**
 ```csharp
-var successResult = FailureOrNothing.Success;
+//success
+var successResult = FailureOrNothing.Success; //obsoleted
+
+var newSuccessResult = FailureOrNothing.Nothing; //more expressive and in line with the name
+
+var methodSuccessResult = FailureOrNothing.Succeed(); //if prefer explicit method calls
+
+//failure
 var failureResult = FailureOrNothing.Fail("Unable to process the request.");
+
+var failureWithException = FailureOrNothing.Fail(new InvalidOperationException("Invalid operation."));
 
 // Check and act on result
 successResult.Match(
@@ -32,6 +41,32 @@ failureResult.Match(
     success: () => Console.WriteLine("Operation succeeded!"),
     failure: error => Console.WriteLine($"Operation failed: {error.Message}")
 );
+
+//check and return a result
+var msg = successResult.MatchReturn(
+    success: () => "Operation completed successfully.",
+    failure: error => $"Operation failed: {error.Message}"
+); 
+
+Console.WriteLine(msg); // Output: "Operation completed successfully."
+```
+
+### Added in this version (v3.1.1)
+```csharp
+ FailureOrNothing AddUser(User newUser)
+ {
+    try
+    {
+         CheckValidity(newUser);
+         await _userService.AddNew(newUser);
+         return Nothing.Instance;
+         //return FailureOrNothing.Nothing; - still works
+    }
+    catch (Exception e)
+    {
+        return e; //automatic conversion to FailureOrNothing
+    }
+ }
 ```
 
 ---
@@ -151,7 +186,7 @@ public class FileReader
             string content = File.ReadAllText(filePath);
             Console.WriteLine("File Content: ");
             Console.WriteLine(content);
-            return FailureOrNothing.Success; // Operation succeeded
+            return FailureOrNothing.Nothing; // Operation succeeded
         }
         catch (Exception ex)
         {

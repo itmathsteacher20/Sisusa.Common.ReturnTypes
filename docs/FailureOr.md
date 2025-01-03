@@ -155,6 +155,28 @@ This example safely handles division by zero by encapsulating the error in a `Fa
 - **`GetOr(T fallbackValue)`**  
   Returns the encapsulated value if successful, or the provided fallback value if in an error state.
 
+
+### Changes in this release (v3.1.1)
+- Added implicit conversion from `T` to `FailureOr<T>` for success cases.
+- Added implicit conversion from `IFailure` or `Exception` to for failure cases.
+- Essentially made working with the class more convenient and less verbose.
+
+```csharp C#
+ var foundUser = await userService.FindById(123);
+ 
+    
+ //previous version code with verbose conversion
+ if (foundUser is null)
+     return FailureOr<User>.Fail(new EntityNotFoundError("User", 123)); 
+
+ return FailureOr<User>.Succeed(foundUser);
+
+ //can now be written, with automatic(implicit) conversion as
+ return (foundUser is null) ? 
+    new EntityNotFoundError("User", 123) : 
+    foundUser;
+
+```
 ### Properties
 
 - **`IsError`**  

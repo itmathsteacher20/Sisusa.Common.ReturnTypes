@@ -158,6 +158,34 @@
         {
             return Fail(exception, $"Operation failed with exception: {exception.GetType().Name}.");
         }
+
+        public static implicit operator FailureOr<T>(T value)
+        {
+            if (value is null)
+            {
+                return Fail("Cannot wrap null value. Use FailureOrNothing if you intend to use a type that is empty on success.");
+            }
+            return FailureOr<T>.Succeed(value);
+        }
+
+        public static implicit operator FailureOr<T>(Failure failure)
+        {
+            if (failure is null)
+            {
+                return Fail(new Failure("NULL", "Nothing to wrap as Error.", new NullReferenceException()));
+            }
+            return FailureOr<T>.Fail(failure);
+        }
+
+        public static implicit operator FailureOr<T>(FailureInfo failure)
+        {
+            return FailureOr<T>.Fail(failure);
+        }
+
+        public static implicit operator FailureOr<T>(Exception exception)
+        {
+            return FailureOr<T>.Fail(exception);
+        }
         
 
         /// <summary>
