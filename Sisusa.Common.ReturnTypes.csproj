@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-	<Version>3.1.1</Version>
+	<Version>3.1.2</Version>
 	<Title>ReturnTypes (FailureOr{T}, FailureOrNothing, Failure, Optional)</Title>
 	<Description>This library offers an intuitive and robust way to deal with common programming challenges, especially in scenarios involving nullable or potentially error-prone operations. The provided methods help ensure clean, maintainable, and error-resilient code.</Description>
 	<Copyright>Private</Copyright>
@@ -12,12 +12,10 @@
 	<RepositoryUrl>https://github.com/itmathsteacher20/Sisusa.Common.ReturnTypes/</RepositoryUrl>
 	<RepositoryType>git</RepositoryType>
 	<PackageTags>Result;FailureOr;FailureOrNothing;Optional;ReturnTypes</PackageTags>
-	<PackageReleaseNotes>
-		- added implicit conversions to make it more convenient to create the types (FailureOr{int} value = 4; works and is less verbose)
-		- cleaned up removed unused types (Nothing)
-	</PackageReleaseNotes>
+	<PackageReleaseNotes>minor fix on implicit operator forcefully coescing all types to a success value.</PackageReleaseNotes>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
 	<PackageLicenseExpression>MIT</PackageLicenseExpression>
+	<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>

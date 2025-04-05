@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Thabiso\\source\\repos\\Return Types\\Sisusa.Common.ReturnTypes\\Sisusa.Common.ReturnTypes.csproj": {}
+    "C:\\Users\\T Dlamini\\Documents\\GitHub\\Sisusa.Common.ReturnTypes\\Sisusa.Common.ReturnTypes.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Thabiso\\source\\repos\\Return Types\\Sisusa.Common.ReturnTypes\\Sisusa.Common.ReturnTypes.csproj": {
-      "version": "3.1.1",
+    "C:\\Users\\T Dlamini\\Documents\\GitHub\\Sisusa.Common.ReturnTypes\\Sisusa.Common.ReturnTypes.csproj": {
+      "version": "3.1.2",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Thabiso\\source\\repos\\Return Types\\Sisusa.Common.ReturnTypes\\Sisusa.Common.ReturnTypes.csproj",
+        "projectUniqueName": "C:\\Users\\T Dlamini\\Documents\\GitHub\\Sisusa.Common.ReturnTypes\\Sisusa.Common.ReturnTypes.csproj",
         "projectName": "Sisusa.Common.ReturnTypes",
-        "projectPath": "C:\\Users\\Thabiso\\source\\repos\\Return Types\\Sisusa.Common.ReturnTypes\\Sisusa.Common.ReturnTypes.csproj",
-        "packagesPath": "C:\\Users\\Thabiso\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Thabiso\\source\\repos\\Return Types\\Sisusa.Common.ReturnTypes\\obj\\",
+        "projectPath": "C:\\Users\\T Dlamini\\Documents\\GitHub\\Sisusa.Common.ReturnTypes\\Sisusa.Common.ReturnTypes.csproj",
+        "packagesPath": "C:\\Users\\T Dlamini\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\T Dlamini\\Documents\\GitHub\\Sisusa.Common.ReturnTypes\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Thabiso\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\T Dlamini\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -26,7 +26,6 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -66,7 +65,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.101/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.102/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

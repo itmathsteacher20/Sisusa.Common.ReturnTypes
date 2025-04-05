@@ -164,8 +164,16 @@
             if (value is null)
             {
                 return Fail("Cannot wrap null value. Use FailureOrNothing if you intend to use a type that is empty on success.");
+
+            } else if (value is IFailure fVal)
+            {
+                return Fail(fVal);
+
+            } else if (value is T tVal)
+            {
+                return Succeed(tVal);
             }
-            return FailureOr<T>.Succeed(value);
+            return Fail(value.ToString()!);
         }
 
         public static implicit operator FailureOr<T>(Failure failure)
