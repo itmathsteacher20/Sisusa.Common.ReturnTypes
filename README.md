@@ -38,13 +38,14 @@ This type is designed for operations that return a value. It encapsulates either
 FailureOr<User> GetUserById(int userId)
 {
     if (userId <= 0)
-        return FailureOr<User>.Fail(new Failure("INVALID_ID", "User ID must be greater than zero"));
+        return FailureOr<User>.Fail(new InvalidInputFailure("User ID must be greater than zero"));
 
     var user = database.GetUser(userId);
     if (user == null)
-        return FailureOr<User>.Fail(new Failure("NOT_FOUND", $"User with ID {userId} not found"));
+        return FailureOr<User>.Fail(new ItemNotFoundFailure("User", userId));
 
     return FailureOr<User>.Succeed(user);
+    //can also be written as return user; since implicit conversion is supported
 }
 ```
 
@@ -53,6 +54,41 @@ By distinguishing between operations that return a value (`FailureOr<T>`) and th
 
 
 For more detailed documentation please read [FailureOr<T>](docs/FailureOr.md), [FailureOrNothing](docs/FailureOrNothing.md) and [Extension methods](docs/FailureOrExtensions.md)
+
+
+## A note on usage
+You can choose to use either `FailureOr<T>` or `FailureOrNothing` based on the context of your operation. For operations that do not return a value, `FailureOrNothing` provides a clear and concise way to represent success or failure without the overhead of handling a generic type. For operations that return a value, `FailureOr<T>` allows you to encapsulate both the result and any potential failure information in a structured manner.
+For example, if you have a method that performs an action without returning a result, such as saving data or sending an email, `FailureOrNothing` would be the appropriate choice. On the other hand, if you have a method that retrieves data or performs a calculation and returns a result, `FailureOr<T>` would be more suitable.
+
+Usage Flow is designed to be intuitive and straightforward, allowing you to easily check for success or failure and handle the results accordingly.
+You can use pattern matching, extension methods, or direct property access to work with the results of your operations.
+
+```csharp
+var result = GetUserById(123);
+
+// Using pattern matching
+result.Match(
+    success: user => Console.WriteLine($"User found: {user.Name}"),
+    failure: failureInfo => Console.WriteLine($"Failed to get user: {failureInfo.Message}")
+);
+
+// Using extension methods
+return result.MatchReturn(
+    success: user => user.Name,
+    failure: failureInfo => "Unknown User"
+);
+
+// Direct property access
+if (result.IsFailure)
+{
+    Console.WriteLine($"Failed to get user: {result.FailureInfo.Message}");
+}
+else
+{
+    Console.WriteLine($"User found: {result.Value.Name}");
+}
+```
+The same pattern applies to `FailureOrNothing`, where you can check for success or failure and handle the results accordingly.
 
 ---
 # Other Types in the Library
@@ -92,6 +128,28 @@ optionalValue
         some: v => Console.WriteLine($"Value: {v}"),
         none: () => Console.WriteLine("No value"));
 ```
+The initial value of `42` is transformed to `84` using `Map`, and the presence of a value is handled with `Match`. If the optional were empty, it would execute the `none` action instead.
+
+As with the `FailureOr` types, `Optional<T>` allows either chaining of operations or direct handling of presence/absence, making it a versatile tool for managing optional values in a clear and functional style.
+
+```csharp
+
+var mightBeUser = GetUserById(123);
+if (mightBeUser.IsNone)
+{
+    Console.WriteLine("User not found.");
+}
+else
+{
+    var user = mightBeUser.Value;
+    Console.WriteLine($"User found: {user.Name}");
+}
+```
+
+## Usage Note:
+While `Optional<T>` provides a powerful way to handle optional values, it is important to use it judiciously. 
+Overusing `Optional<T>` can lead to unnecessary complexity and performance overhead. It is best suited for scenarios where the presence or absence of a value is a common occurrence and needs to be handled explicitly. For cases where nullability is sufficient, using nullable types or standard null checks may be more appropriate.
+
 
 For more detailed information, refer to the [extended documentation](docs/Optional.md).
 
@@ -154,5 +212,21 @@ All these are designed to ensure clear, maintainable and more robust code that i
 
 Read more about these extension methods [here](docs/Extensions.md)
 
+## Failure Types
+Predefined failure types are provided in the `Sisusa.Common.ReturnTypes` library to represent common failure scenarios in a consistent manner. These types include:
+  - `ItemNotFoundFailure`: Represents a failure when a requested item cannot be found.
+  - `InvalidInputFailure`: Represents a failure due to invalid input.
+  - `AuthenticationFailure`: Represents a failure related to authentication issues.
+  - `PermissionDeniedFailure`: Represents a failure when the caller lacks necessary permissions.
+  - `DatabaseConnectionFailure`: Represents a failure when the application cannot connect to the database.
+  - `ExternalServiceFailure`: Represents a failure when an external service is unavailable or returns an error.
+  - `InvalidInputFailure`: Represents a failure when data fails validation checks.
+  - `ConflictFailure`: Represents a failure due to a conflict, such as a duplicate record or version mismatch.
+ 
+These predefined failure types provide a standardized way to represent common error scenarios, making it easier for developers to handle and respond to failures in a consistent manner across the application. Each failure type includes relevant information such as error codes, messages, and optional details to aid in debugging and error handling.
+
+`return FailureOrNothing.Fail(new ItemNotFoundFailure("User", 123)); //error msg generated automatically` // Example of using a predefined failure type 
+
+For more information about these failure types, please refer to the [Failure Types Reference](docs/failures.md).
 
 This library offers a clean and flexible approach to handling results and failures in C#. Feedback and contributions are welcome!

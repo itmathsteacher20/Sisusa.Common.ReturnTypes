@@ -25,6 +25,9 @@
         /// </summary>
         /// <param name="otherValue">The alternate value to return if the current <c>Optional</c> instance is empty.</param>
         /// <returns>The value if present; otherwise, the specified alternate value.</returns>
+        /// <remarks>
+        /// This is for the case where you are using the Null Object Pattern, and you want to provide a default value when the <c>Optional</c> is empty.
+        /// </remarks>
         public T OrElse(T otherValue)
         {
             return HasValue() ?  _value! : otherValue;
@@ -41,6 +44,29 @@
                 doAction(_value!);
             }
         }
+
+        /// <summary>
+        /// Determines whether the current instance contains no value.
+        /// </summary>
+        /// <remarks>
+        /// Short circuiting: If the instance is empty, it will return true immediately without evaluating any further conditions. 
+        /// This allows for efficient checks in scenarios where the presence of a value is critical before performing additional operations.
+        /// </remarks>
+        /// <returns>true if the instance is empty; otherwise, false.</returns>
+        public bool IsEmpty()
+        {
+            return !HasValue();
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether the current instance represents an empty or uninitialized value.
+        /// </summary>
+        public bool IsNone => IsEmpty();
+
+        /// <summary>
+        /// Gets a value indicating whether the current instance contains a value.
+        /// </summary>
+        public bool IsSome => HasValue();
 
         /// <summary>
         /// Returns the value if present; otherwise, computes the value using the given supplier function.
@@ -60,7 +86,7 @@
         /// <exception cref="Exception">Thrown when the current <c>Optional</c> instance is empty.</exception>
         public T OrThrow(Exception exception)
         {
-            if (!HasValue())
+            if (IsEmpty())
             {
                 throw exception;
             }
@@ -68,25 +94,39 @@
             return _value!;
         }
 
-
         /// <summary>
-        /// Applies the specified mapping function to the value if present, and returns an <c>Optional</c> containing the result.
+        /// Returns the contained value if present; otherwise, throws an exception provided by the specified delegate.
         /// </summary>
-        /// <param name="mapFunc">The function to apply to the value if present.</param>
-        /// <returns>An <c>Optional</c> with the mapped value if it is present and non-null; otherwise, an empty <c>Optional</c>.</returns>
-        public Optional<T> Map(Func<T> mapFunc)
+        /// <remarks>Use this method to enforce that a value must be present, supplying a custom exception
+        /// to be thrown if it is not. The delegate is only invoked if the value is absent.</remarks>
+        /// <param name="exceptionFunc">A delegate that returns the exception to be thrown if the value is not present. Cannot be null.</param>
+        /// <returns>The contained value if present.</returns>
+        public T OrThrow(Func<Exception> exceptionFunc)
         {
-            if (!HasValue())
+            if (IsEmpty())
             {
-                return this;
+                throw exceptionFunc();
             }
-            var returnValue = mapFunc();
-            
-            if (returnValue is null)
-                return None;
-            return Some(returnValue);
+            return _value!;
         }
 
+        /// <summary>
+        /// Gets the stored value if present; otherwise, returns null.
+        /// </summary>
+        /// <returns>The stored value if available; otherwise, null.</returns>
+        public T? GetValueOrNull()
+        {
+            return HasValue() ? _value : default;
+        }
+
+        /// <summary>
+        /// Gets the value contained in this Optional instance.
+        /// </summary>
+        /// <remarks>Accessing this property when no value is present will throw an exception. Use
+        /// IsEmpty() to check for the presence of a value before accessing this property.</remarks>
+        public T Value => HasValue() ? _value! : throw new InvalidOperationException("No value present in this Optional instance.");
+
+        
         /// <summary>
         /// Asynchronously applies the provided function to the value, if present, and returns a new <c>Task</c> of the mapped result.
         /// </summary>
@@ -94,7 +134,7 @@
         /// <returns>A <c>Task</c> representing the asynchronous operation, containing the mapped result if the value is present; otherwise, a completed <c>Task</c> with the default result.</returns>
         public Task<Optional<T>> MapAsync(Func<T, Task<T>> mapFunc)
         {
-            if (!HasValue())
+            if (IsEmpty())
             {
                 return Task.FromResult(this);
             }
@@ -111,7 +151,7 @@
         /// <returns>A new <c>Optional</c> containing the mapped value if the current <c>Optional</c> has a value, otherwise an empty <c>Optional</c>.</returns>
         public Optional<TU> Map<TU>(Func<T, TU> mapFunc)
         {
-            if (!HasValue())
+            if (IsEmpty())
             {
                 return Optional<TU>.Empty();
             }
@@ -138,7 +178,7 @@
         /// </returns>
         public Optional<TU> FlatMap<TU>(Func<T, Optional<TU>> mapFunc)
         {
-            if (!HasValue()) return Optional<TU>.Empty();
+            if (IsEmpty()) return Optional<TU>.Empty();
             
             var returnValue = mapFunc(_value!);
             return returnValue;
@@ -153,7 +193,7 @@
         /// <returns>An <c>Optional</c> containing the result of applying the function, or an empty <c>Optional</c> if no value is present.</returns>
         public Optional<TU> Then<TU>(Func<T, Optional<TU>> doNext)
         {
-            return !HasValue() ? Optional<TU>.None : doNext(_value!);
+            return IsEmpty() ? Optional<TU>.None : doNext(_value!);
         }
 
         /// <summary>
@@ -163,9 +203,7 @@
         /// <param name="none">The action to execute if no value is present.</param>
         public void Match(Action<T> some, Action none)
         {
-            var isEmpty = !HasValue();
-            //Console.WriteLine($"Empty state: {isEmpty}");
-            if (isEmpty)
+            if (IsEmpty())
             {
                 none();
             }
@@ -186,9 +224,7 @@
         /// <returns>A <c>Task</c> representing the asynchronous operation.</returns>
         public async Task MatchAsync(Func<T, Task> some, Func<Task> none)
         {
-            var isEmpty = !HasValue();
-            //Console.WriteLine($"Empty state: {isEmpty}");
-            if (isEmpty)
+            if (IsEmpty())
             {
                  await none();
             }
@@ -202,7 +238,7 @@
         {
             if (obj is not Optional<T> opt) return false;
             
-            if (!HasValue())
+            if (IsEmpty())
             {
                 return opt.HasValue() == false;
             }
@@ -216,7 +252,7 @@
 
         public override string ToString()
         {
-            return !HasValue() ? "None" : $"Some({_value}";
+            return IsEmpty() ? "None" : $"Some({_value}";
         }
 
 

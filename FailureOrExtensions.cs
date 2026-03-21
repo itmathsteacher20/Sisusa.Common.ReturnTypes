@@ -100,4 +100,39 @@ public static class FailureOrExtensions
     {
         failureOr.Match(value => { }, handler);
     }
+
+    /// <summary>
+    /// Short-circuits the processing chain if the current <see cref="FailureOr{T}"/> instance represents a failure state, returning true if it is a failure and false otherwise.
+    /// </summary>
+    /// <typeparam name="T">The type boxed by the current instance.</typeparam>
+    /// <param name="failureOr">The <see cref="FailureOr{T}"/> instance whose processing chain to short.</param>
+    /// <returns>
+    /// <see langword="true"/> if the current instance represents a failure state; otherwise, <see langword="false"/>.
+    /// </returns>
+    public static bool IsFailure<T>(this FailureOr<T> failureOr)
+    {
+        return failureOr.MatchReturn(
+            success: _ => false,
+            failure: _ => true);
+    }
+}
+
+public static class FailureOrNothingExtensions
+{
+    /// <summary>
+    /// Determines whether the specified result represents a failure.
+    /// </summary>
+    /// <param name="failureOrNothing">The result to evaluate for failure.</param>
+    /// <returns>true if the result represents a failure; otherwise, false.</returns>
+    public static bool IsFailure(this FailureOrNothing failureOrNothing)
+    {
+        return failureOrNothing.MatchReturn(
+            success: () => false,
+            failure: _ => true);
+    }
+}
+
+public static class FailureInfoExtensions
+{
+    //FailureOr<T>.Fail(entityName, id);
 }
