@@ -12,7 +12,7 @@
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
-    "version": "3.1.3",
+    "version": "3.1.4",
     "restore": {
       "projectUniqueName": "E:\\Documents\\GitHub\\Sisusa.Common.ReturnTypes\\Sisusa.Common.ReturnTypes.csproj",
       "projectName": "Sisusa.Common.ReturnTypes",
